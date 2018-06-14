@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# show the graph in date order from the current branch.
+# you can add --all to see the entire graph
+# you can also specify a branch name to see the graph from another branch
+
+git log --graph --date-order --color=auto --pretty='[%C(yellow)%h%Creset]%C(auto)%d%Creset %s <%C(cyan)%an%Creset> %Cgreen(%cr)%Creset' "$@"

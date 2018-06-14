@@ -1,0 +1,78 @@
+#!/bin/bash
+
+source "$(git --exec-path)/git-sh-setup"
+
+USAGE="Show information specific to your branch"
+BASE_BRANCH="dev"
+
+function _repo_clean() {
+    if git_status=$(git status --porcelain --untracked=no 2>/dev/null) && [[ -n "${git_status}" ]]; then
+        echo "dirty"
+    else
+        echo "clean"
+    fi
+}
+
+function _branch_name() {
+    git symbolic-ref --short -q HEAD
+}
+
+function _description() {
+    git describe --tags
+}
+
+function _num_commits() {
+    git rev-list --count $BASE_BRANCH...HEAD
+}
+
+function _merge_base() {
+    git merge-base $BASE_BRANCH HEAD
+}
+
+function _dev_behind() {
+    git rev-list --count dev...origin/dev
+}
+
+function _fetch() {
+    if [ "$fetch" == "true" ]; then
+        echo "Fetching from remote..."
+        git fetch
+        echo "Done"
+        echo ""
+    fi
+}
+
+function _message() {
+    origin_dev_commits=$(_dev_behind)
+    if [ "$origin_dev_commits" -gt 0 ]; then
+        echo "WARNING: your dev is behind origin/dev by $origin_dev_commits commits"
+        echo
+    fi
+
+    branch=$(_branch_name)
+    echo "Branch is: $branch ($(_repo_clean))"
+    echo "Version: $(_description)"
+
+    if [[ "$branch" =~ ^(feature/|temp/) ]]; then
+        echo "Base branch is assumed to be: $BASE_BRANCH"
+        echo ""
+
+        base=$(_merge_base);
+        echo "Last common commit with ($BASE_BRANCH):"
+        echo "  $(git show --oneline --color=always -s $base)"
+        echo ""
+        echo "Commits on branch: $(_num_commits)"
+    else
+        die "Only supported on feature/ branches"
+    fi
+}
+
+if [[ $# == 1 ]]; then
+    if [[ $1 == "--no-fetch" ]]; then
+        no_fetch=true
+    else
+        usage
+    fi
+fi
+
+_message
