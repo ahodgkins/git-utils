@@ -1,0 +1,53 @@
+#!/bin/bash
+
+source "$(git --exec-path)/git-sh-setup"
+
+USAGE="Rebase your branch onto the tip of dev. Add --check to see if it merges cleanly"
+BASE_BRANCH="dev"
+
+function _repo_is_clean() {
+    if git_status=$(git status --porcelain --untracked=no 2>/dev/null) && [[ -n "${git_status}" ]]; then
+        die "!!! Dirty tree. Clean up and try again."
+    fi
+}
+
+function _rebase() {
+    check=false
+    if [[ $# == 1 ]]; then
+        if [[ $1 == "--check" ]]; then
+            check=true
+        else
+            usage
+        fi
+    fi
+
+    if branch=$(git symbolic-ref --short -q HEAD); then
+        if [[ "$branch" == feature/* ]]; then
+            echo "On feature branch: $branch"
+            if base=$(git merge-base $BASE_BRANCH $branch); then
+                num_commits=$(git rev-list --count $base..$branch)
+                echo "Branch created from: $(git show --oneline -s $base)"
+                echo "$num_commits commits on this branch:"
+                git log --abbrev-commit --pretty=oneline $branch ^$base
+                # should possibly do a git log for a little window around your commits so you can see dev, like:
+                #git log --graph -n 15 --abbrev-commit --pretty=oneline dev
+                # but with date
+                #git branch temp/
+            else
+                die "Unable to get merge-base from dev"
+            fi
+        else
+            die "Can only use on feature/ branches, not $branch"
+        fi
+    else
+        echo "not on a branch"
+    fi
+
+    if [[ "$check" == "true" ]]; then
+        echo "check is set"
+    else
+        echo "check not set"
+    fi
+}
+
+_rebase $1

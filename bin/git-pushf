@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# add safety by doing:
+#git log --oneline origin/feature/SAP-4014-bam-streaming-consume-service...d0a36703220a9658fe18acf6b273ab291158d82c | wc -l
+#git log --oneline feature/SAP-4014-bam-streaming-consume-service...dev | wc -l
+
+exec git push --force-with-lease "$@"

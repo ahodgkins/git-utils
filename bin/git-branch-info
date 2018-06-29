@@ -1,9 +1,14 @@
 #!/bin/bash
 
+DIR="${BASH_SOURCE%/*}"
+if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+. "$DIR/../lib/colours.sh"
+
 source "$(git --exec-path)/git-sh-setup"
 
 USAGE="Show information specific to your branch"
 BASE_BRANCH="dev"
+ORIGIN="origin"
 
 function _repo_clean() {
     if git_status=$(git status --porcelain --untracked=no 2>/dev/null) && [[ -n "${git_status}" ]]; then
@@ -30,7 +35,7 @@ function _merge_base() {
 }
 
 function _dev_behind() {
-    git rev-list --count dev...origin/dev
+    git rev-list --count $BASE_BRANCH...$ORIGIN/$BASE_BRANCH
 }
 
 function _fetch() {
@@ -42,24 +47,28 @@ function _fetch() {
     fi
 }
 
+function _show_commit {
+    git show --pretty='[%C(yellow)%h%Creset]%C(auto)%d%Creset %s <%C(cyan)%an%Creset> %Cgreen(%cr)%Creset' --color=always -s $1
+}
+
 function _message() {
     origin_dev_commits=$(_dev_behind)
     if [ "$origin_dev_commits" -gt 0 ]; then
-        echo "WARNING: your dev is behind origin/dev by $origin_dev_commits commits"
+        echo "$(red WARNING): your base branch $(cyan $BASE_BRANCH) is behind $(cyan $ORIGIN/$BASE_BRANCH) by $origin_dev_commits commits"
         echo
     fi
 
     branch=$(_branch_name)
-    echo "Branch is: $branch ($(_repo_clean))"
+    echo "Branch is: $(cyan $branch) ($(_repo_clean))"
     echo "Version: $(_description)"
 
     if [[ "$branch" =~ ^(feature/|temp/) ]]; then
-        echo "Base branch is assumed to be: $BASE_BRANCH"
+        echo "Base branch is assumed to be: $(cyan $BASE_BRANCH)"
         echo ""
 
         base=$(_merge_base);
-        echo "Last common commit with ($BASE_BRANCH):"
-        echo "  $(git show --oneline --color=always -s $base)"
+        echo "Last common commit with $(cyan $BASE_BRANCH):"
+        echo "  $(_show_commit $base)"
         echo ""
         echo "Commits on branch: $(_num_commits)"
     else
