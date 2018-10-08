@@ -1,0 +1,35 @@
+#!/bin/bash
+
+source "$(git --exec-path)/git-sh-setup"
+
+DIR="${BASH_SOURCE%/*}"
+if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+. "$DIR/../lib/colours.sh"
+
+USAGE="Search commit messages on all release branches and dev. Useful for finding what ticket is in which branches."
+
+function _merged {
+    if [[ $# != 1 ]]; then
+        usage
+    fi
+
+
+    echo "Searching release branches containing text '$(magenta $1)':"
+    for branch in dev $(git branch --list 'release/*[0-9]' | cut -c 3-); do
+        num_commits=$(git log --no-merges --oneline --grep $1 $branch | wc -l | tr -d '[:space:]')
+        #if [ "$num_commits" -gt 0 ]; then
+        #    num_commits="$(green $num_commits)"
+        #else
+        #    num_commits="$(red $num_commits)"
+        #fi
+        #echo "$(cyan $branch) has $num_commits commits containing text '$(magenta $1)'"
+
+        if [ "$num_commits" -gt 0 ]; then
+            echo "    $(green $branch) ($num_commits commits)"
+        else
+            echo "    $(red $branch) ($num_commits commits)"
+        fi
+    done
+}
+
+_merged $1

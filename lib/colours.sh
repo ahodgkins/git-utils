@@ -29,3 +29,7 @@ function cyan {
 function magenta {
     echo -en "${magenta}${1}${end}"
 }
+
+function green {
+    echo -en "${green}${1}${end}"
+}
